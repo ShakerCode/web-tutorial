@@ -226,7 +226,7 @@ kubectl create -f web-ingress.yaml
 - If the Ingress shows an error for ClusterIP, change the type to NodePort by entering `type: NodePort` at the end of "web-service.yaml".
 - If the Ingress doesn't resolve or complains about health checks, change the `servicePort` to `80` instead of `https`
 
-The domain name should now direct you to the Jitsi Meet page. Make sure you can make meetings of 3+ people and see/hear the other users. The lock in the top left corner should also indicate that your certificate is valid.
+The domain name should now direct you to the Jitsi Meet page. Make sure you can create meetings of 3+ people and see/hear the other users. The lock in the top left corner should also indicate that your certificate is valid.
 - **Important:** Make sure you are using HTTPS and not HTTP, Jitsi only works over HTTPS (port 443).
 - A common issue is video/audio being cut in meetings of 3 or more people. This means P2P (Peer-to-Peer) connection works, but the meeting cannot connect to the JVB. If this happens, make sure the DOCKER_HOST_ADDRESS field in "deployment.yaml" is pointing to the `jvb-udp` LoadBalancer's IP and not the ingress controller's IP
 - [This example](https://github.com/jitsi/docker-jitsi-meet/tree/k8s-helm/k8s) is another way of setting up Jitsi on Kubernetes. We did run into problems with this version, namely a bug that kicked users out of meetings, so take care when implementing it.
