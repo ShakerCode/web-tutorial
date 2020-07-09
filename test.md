@@ -2,7 +2,7 @@
 - Cluster version: `1.14.10-gke.36`
 - kubectl version: `1.14`
 
-This installation process was carried out using the Google Compute Engine and Google Kubernetes Engine, which are hosted by [Google Cloud Platform.](https://cloud.google.com/)
+This installation process performed using the Google Compute Engine and Google Kubernetes Engine, which are hosted by [Google Cloud Platform.](https://cloud.google.com/)
 
 # Quick Install
 > Based on https://www.digitalocean.com/community/tutorials/how-to-install-jitsi-meet-on-ubuntu-18-04
@@ -34,7 +34,7 @@ Run
 ```
 sudo nano /etc/hosts
 ```
-Change the top line to `127.0.0.1 your-domain`. Adding this line under the existing one should be fine too.
+Change the top line to `127.0.0.1 your-domain`. Alternatively, adding this line under the existing one should be fine too.
 
 Exit the file and run `ping your-domain` to check
 
