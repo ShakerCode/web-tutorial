@@ -85,10 +85,13 @@ Choose self-signed certificate (first option) for now. The next step will handle
 ## 6. TLS certificate with Let's Encrypt
 Jitsi's quick install comes with a Let's Encrypt script. Again, make sure you have an A record for your DNS pointing at the VM instance's IP address
 
-Install certbot. *Note: The script will ask for an email address.*
+Install certbot. 
 ```
 sudo apt-get install software-properties-common
 sudo add-apt-repository ppa:certbot/certbot
+```
+Run Jitsi's script. *Note: The script will ask for an email address.*
+```
 sudo /usr/share/jitsi-meet/scripts/install-letsencrypt-cert.sh
 ```
 If you see the "Congratulations" message, you're good to go. Otherwise, refer to the Certbot section of the README
@@ -97,9 +100,3 @@ Since Jitsi Meet uses port 443 (https), you're free to delete port 80, which was
 ```
 sudo ufw delete allow 80/tcp
 ```
-
-
-
-
-
-
