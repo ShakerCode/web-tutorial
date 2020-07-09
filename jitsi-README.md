@@ -155,7 +155,7 @@ kubectl create secret generic jitsi-config -n jitsi --from-literal=JICOFO_COMPON
 ```
 
 ## 3. Deploy JVB UDP service
-Jitsi uses WebRTC, which uses the UDP transport-layer protocol to communicate. (More info [here](comparitech.com/blog/vpn-privacy/udp-vs-tcp-ip/). Copy the contents of "jvb-udp.yaml" and create a UDP service to expose the Jitsi Videobridge to the internet via port 30300.
+Jitsi uses WebRTC, which uses the UDP transport-layer protocol to communicate. (More info [here](comparitech.com/blog/vpn-privacy/udp-vs-tcp-ip/)). Copy the contents of "jvb-udp.yaml" and create a UDP service to expose the Jitsi Videobridge to the internet via port 30300.
 
 **Note:** The port number can be changed, especially when you need multiple ports for multiple videobridges.
 
