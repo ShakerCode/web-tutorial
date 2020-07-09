@@ -154,7 +154,7 @@ This step is optional, but the provided template is configured to retrive passwo
 kubectl create secret generic jitsi-config -n jitsi --from-literal=JICOFO_COMPONENT_SECRET=... --from-literal=JICOFO_AUTH_PASSWORD=... --from-literal=JVB_AUTH_PASSWORD=...
 ```
 
-## Deploy JVB UDP service
+## 3. Deploy JVB UDP service
 Jitsi uses WebRTC, which uses the UDP transport-layer protocol to communicate. (More info [here](comparitech.com/blog/vpn-privacy/udp-vs-tcp-ip/). Copy the contents of "jvb-udp.yaml" and create a UDP service to expose the Jitsi Videobridge to the internet via port 30300.
 
 **Note:** The port number can be changed, especially when you need multiple ports for multiple videobridges.
@@ -163,20 +163,61 @@ Jitsi uses WebRTC, which uses the UDP transport-layer protocol to communicate. (
 kubectl create -f jvb-udp.yaml
 ```
 
-## Deploy the main Jitsi pod
+## 4. Deploy the main Jitsi pod
 "deployment.yaml" will create the pod containing jicofo, prosody, jvb, and web. Change the `DOCKER_HOST_ADDRESS` value to the external IP of the LoadBalancer (jvb-udp) you created.
 
 ```
 kubectl create -f deployment.yaml
 ```
 
-## TLS secret for certificate
+## 5. Create an Ingress controller (optional)
+With HTTP loadbalancing enabled, Kubernetes will default to its own Kubernetes Ingress Controller to handle the routing rules in your Ingress. However, we ran into problems when using the default setup, so we switched to an nginx-ingress controller instead.
 
-Refer to the Certbot section for getting a certificate
+To install the controller, use the package (aka "chart") manager, [Helm](https://helm.sh/)
 
-## Deploy the web service and Ingress
+**Note:** If you're on a windows machine, you should still be able to install Helm using [Chocolatey](https://chocolatey.org/). However, you can use Google Cloud Shell to follow along in Linux.
+
+Connect to your cluster
+```
+gcloud container clusters get-credentials CLUSTER-NAME --zone ZONE --project PROJECT-ID
+```
+
+Install helm
+
+```
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+chmod 700 get_helm.sh
+./get_helm.sh
+```
+(At the time of writing, the Helm version is `v3.2.1`)
+
+Install the `stable` repo
+```
+helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+```
+Install the nginx-ingress controller
+```
+helm install my-nginx stable/nginx-ingress 
+```
+(At the time of writing, the chart version is `1.40.3` and the app version is `0.32.0`)
+
+Point your DNS at the nginx-ingress controller's external IP and create an A record. You'll need this for passing the http-01-challenge in the Certbot section
+
+
+## 6. TLS secret for certificate
+
+Refer to the Certbot section for getting a certificate. Save the generated certificate into a `.pem` or `.crt` file and the key into a `.key` file.
+
+```
+kubectl create secret tls CERT_NAME --key KEY_FILE --cert CERT_FILE
+```
+
+**Note:** Go into "web-ingress.yaml" and change `secretName` to whatever you set `CERT_NAME` as.
+
+## 7. Deploy the web service and Ingress
 The web service listens on port 80 (HTTP) and port 443 (HTTPS). 
 
+Fill in your hostname next to `hosts` and `host` in "web-ingress.yaml"
 ```
 kubectl create -f web-service.yaml
 kubectl create -f web-ingress.yaml
@@ -185,3 +226,39 @@ kubectl create -f web-ingress.yaml
 - If the Ingress shows an error for ClusterIP, change the type to NodePort by entering `type: NodePort` at the end of "web-service.yaml".
 - If the Ingress doesn't resolve or complains about health checks, change the `servicePort` to `80` instead of `https`
 
+The domain name should now direct you to the Jitsi Meet page. Make sure you can make meetings of 3+ people and see/hear the other users. The lock in the top left corner should also indicate that your certificate is valid.
+- **Important:** Make sure you are using HTTPS and not HTTP, Jitsi only works over HTTPS (port 443).
+- A common issue is video/audio being cut in meetings of 3 or more people. This means P2P (Peer-to-Peer) connection works, but the meeting cannot connect to the JVB. If this happens, make sure the DOCKER_HOST_ADDRESS field in "deployment.yaml" is pointing to the `jvb-udp` LoadBalancer's IP and not the ingress controller's IP
+- [This example](https://github.com/jitsi/docker-jitsi-meet/tree/k8s-helm/k8s) is another way of setting up Jitsi on Kubernetes. We did run into problems with this version, namely a bug that kicked users out of meetings, so take care when implementing it.
+- You can find container logs for jvb, jicofo, and prosody in /var/log/containers after you ssh into the node containing your Jitsi pod.
+
+
+# Certbot
+> [Certbot website](https://certbot.eff.org/)
+
+You can use Certbot to get a renewable certificate from Let's Encrypt.
+
+**Note:** The steps here are meant for installing Certbot without a running webserver. It will work with a webserver as well, but there are other versions of Certbot you can download in that case.
+
+Preliminary steps:
+```
+	sudo apt-get update
+	sudo apt-get install software-properties-common
+	sudo add-apt-repository universe
+	sudo add-apt-repository ppa:certbot/certbot
+	sudo apt-get update
+```
+
+Install certbot
+```
+sudo apt-get install certbot
+```
+Make sure the domain name you're using is actually registered and has an A record for the ingress-controller's IP (Not the JVB UDP service's IP)
+
+By default Certbot will use the http-01-challenge. If it throws an error (especially the ./well-known/acme challenge one), then you can use a DNS challenge instead. Run the following command and create a TXT record for your DNS. Copy in the output string from the challenge into the record and wait a bit for it to register before moving on. 
+
+```
+certbot certonly --manual --preferred-challenges dns -d DOMAIN-NAME
+```
+
+If Certbot still throws errors, refer to the cert-manager process in the README.
