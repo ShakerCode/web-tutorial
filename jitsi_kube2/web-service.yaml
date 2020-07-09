@@ -28,10 +28,10 @@ metadata:
 spec:
   tls:
   - hosts:
-    - jitsi.dylantknguyen.com
-    secretName: tls-secret
+    - <hostname here>
+    secretName: <secret name here>
   rules:
-  - host: jitsi.dylantknguyen.com
+  - host: <hostname here>
     http:
       paths:
       - path: /
