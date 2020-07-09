@@ -5,7 +5,7 @@
 This installation process performed using the Google Compute Engine and Google Kubernetes Engine, which are hosted by [Google Cloud Platform.](https://cloud.google.com/)
 
 # Quick Install
-> Based on https://www.digitalocean.com/community/tutorials/how-to-install-jitsi-meet-on-ubuntu-18-04
+> Based on [How To Install Jitsi Meet on Ubuntu 18.04](https://www.digitalocean.com/community/tutorials/how-to-install-jitsi-meet-on-ubuntu-18-04)
 
 **Note:** All calls to `nano` can be replaced by `vim` or another text editor of your choice 
 
@@ -117,4 +117,71 @@ After creating a standalone Jitsi instance via the Quick Install guide, it is po
 4. Create an **instance group** using the template you created.
 
 # Cluster Setup
+> Based on [Install guide for kubernetes](https://github.com/jitsi/docker-jitsi-meet/tree/master/examples/kubernetes)
+
+**IMPORTANT:** Follow the Google SDK instructions in the main README before continuing. The Kubernetes CLI, `kubectl` will be used multiple times in this guide
+
+This guide will create a single pod containing the four necessary containers to start a Jitsi setup: `jicofo`, `prosody`, `jvb`, and the `web` frontend
+
+### Cluster Settings:
+**Note:** These exact settings are not required to set up Jitsi on Kubernetes. However, they have proven to work when following this guide
+
+- Zone: Choose something suitable
+- Version: 1.14.10-gke.36
+- Number of nodes: 1 (The setup only needs 1 node for now. You can enable autoscaling if you wish)
+- Image type/OS: Ubuntu
+- Machine type: n1-standard-2
+- Access scopes (optional): Allow full access to all Cloud APIs
+- Networking: Public cluster, enable HTTP load balancing (if you decide to use GCP's built in ingress controller)
+
+Connect to the cluster using
+```
+gcloud container clusters get-credentials CLUSTER-NAME --zone ZONE --project PROJECT-ID
+```
+
+## 1. Create Jitsi namespace
+```
+kubectl create namespace jitsi
+```
+Switch namespaces by using
+```
+kubectl config set-context --current --namespace=NAMESPACE
+```
+
+## 2. Create Kubernetes secret
+This step is optional, but the provided template is configured to retrive passwords/credentials from this secret file. It's easier and safer to just implement this. (Replace ... with your desired password)
+```
+kubectl create secret generic jitsi-config -n jitsi --from-literal=JICOFO_COMPONENT_SECRET=... --from-literal=JICOFO_AUTH_PASSWORD=... --from-literal=JVB_AUTH_PASSWORD=...
+```
+
+## Deploy JVB UDP service
+Jitsi uses WebRTC, which uses the UDP transport-layer protocol to communicate. (More info [here](comparitech.com/blog/vpn-privacy/udp-vs-tcp-ip/). Copy the contents of "jvb-udp.yaml" and create a UDP service to expose the Jitsi Videobridge to the internet via port 30300.
+
+**Note:** The port number can be changed, especially when you need multiple ports for multiple videobridges.
+
+```
+kubectl create -f jvb-udp.yaml
+```
+
+## Deploy the main Jitsi pod
+"deployment.yaml" will create the pod containing jicofo, prosody, jvb, and web. Change the `DOCKER_HOST_ADDRESS` value to the external IP of the LoadBalancer (jvb-udp) you created.
+
+```
+kubectl create -f deployment.yaml
+```
+
+## TLS secret for certificate
+
+Refer to the Certbot section for getting a certificate
+
+## Deploy the web service and Ingress
+The web service listens on port 80 (HTTP) and port 443 (HTTPS). 
+
+```
+kubectl create -f web-service.yaml
+kubectl create -f web-ingress.yaml
+```
+
+- If the Ingress shows an error for ClusterIP, change the type to NodePort by entering `type: NodePort` at the end of "web-service.yaml".
+- If the Ingress doesn't resolve or complains about health checks, change the `servicePort` to `80` instead of `https`
 
