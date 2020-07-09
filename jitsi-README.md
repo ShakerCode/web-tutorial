@@ -2,7 +2,7 @@
 - Cluster version: `1.14.10-gke.36`
 - kubectl version: `1.14`
 
-This installation process performed using the Google Compute Engine and Google Kubernetes Engine, which are hosted by [Google Cloud Platform.](https://cloud.google.com/)
+All installation processes were performed using the Google Compute Engine and Google Kubernetes Engine, which are hosted by [Google Cloud Platform.](https://cloud.google.com/)
 
 # Quick Install
 > Based on [How To Install Jitsi Meet on Ubuntu 18.04](https://www.digitalocean.com/community/tutorials/how-to-install-jitsi-meet-on-ubuntu-18-04)
