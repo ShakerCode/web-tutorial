@@ -21,7 +21,7 @@ This installation process performed using the Google Compute Engine and Google K
 ## 2. Set up hostname
 ssh into the VM instance you created. Then, run
 ```
-sudo hostnamectl set-hostname jitsi.your-domain
+sudo hostnamectl set-hostname YOUR-DOMAIN
 ```
 and then 
 ```
@@ -34,9 +34,9 @@ Run
 ```
 sudo nano /etc/hosts
 ```
-Change the top line to `127.0.0.1 your-domain`. Alternatively, adding this line under the existing one should be fine too.
+Change the top line to `127.0.0.1 YOUR-DOMAIN`. Alternatively, adding this line under the existing one should be fine too.
 
-Exit the file and run `ping your-domain` to check
+Exit the file and run `ping YOUR-DOMAIN` to check
 
 ## 4. Set up firewall
 For this step, we'll use the ufw package. Install using
@@ -100,3 +100,21 @@ Since Jitsi Meet uses port 443 (https), you're free to delete port 80, which was
 ```
 sudo ufw delete allow 80/tcp
 ```
+
+# Creating an Instance Group
+After creating a standalone Jitsi instance via the Quick Install guide, it is possible make copies using GCP's instance template feature. This allows you to create an **instance group** that will make new instances based on your existing Jitsi one.
+
+**Note:** All of the tools used in this procedure are in the Google Compute Engine
+
+1. Start by creating a **snapshot** of the Jitsi instance. Choose the instance as your source disk.
+2. Create an **image** from the snapshot. Change the source to "Snapshot" and choose the snapshot you created
+
+    (You can also create the image from command line using)
+    ```
+    gcloud compute images create IMAGE-NAME --source snapshot SNAPSHOT-NAME --storage-location REGION-NAME
+    ```
+3. Create a **template** from the image. Change the machine type to match the original instance's and change the boot disk to your custom image.
+4. Create an **instance group** using the template you created.
+
+# Cluster Setup
+
