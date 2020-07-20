@@ -375,3 +375,4 @@ kubectl exec -it POD-NAME -- /bin/bash
 ```
 The `printenv` command will list all of the pod's environment variables, of which JVB_PORT is a part of. However, its name will be different depending on the pod. If the 	pod's name is "jvb-0," it will be JVB_0_PORT. You can search for it by entering `printenv JVB_0_PORT`. Something like udp://IP_ADDRESS:PORT_NUMBER should appear. Another useful command is `compgen -A variable | grep "keyword"`, which will display the environment variables related to whatever you substitute for "keyword".
 - Usually errors will appear in the service-per-pod-deployment's container logs. You can access them on the Google Cloud interface, or ssh into the node and navigate to /var/log/containers and look for the `service-per-pod` log (run as root).
+- Make sure the service-per-pod deployment/service and service-per-pod-hooks ConfigMap are in the `metacontroller` namespace. Everything else should be in the `jitsi` namespace
