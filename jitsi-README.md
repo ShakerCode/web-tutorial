@@ -378,6 +378,8 @@ The `printenv` command will list all of the pod's environment variables, of whic
 - Usually errors will appear in the service-per-pod-deployment's container logs. You can access them on the Google Cloud interface, or ssh into the node and navigate to /var/log/containers and look for the `service-per-pod` log (run as root).
 - Make sure the service-per-pod deployment/service and service-per-pod-hooks ConfigMap are in the `metacontroller` namespace. Everything else should be in the `jitsi` namespace
 
+---
+
 # Jitsi-Meet-Torture
 
 This is a loadtesting setup that uses [Selenium](https://www.selenium.dev/documentation/en/) to check the performance of conferences by automatically adding/removing fake users to conferences. The setup is done on **Google Chrome**.
