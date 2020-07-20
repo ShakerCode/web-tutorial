@@ -223,6 +223,8 @@ kubectl create -f web-service.yaml
 kubectl create -f web-ingress.yaml
 ```
 
+---
+
 - If the Ingress shows an error for ClusterIP, change the type to NodePort by entering `type: NodePort` at the end of "web-service.yaml".
 - If the Ingress doesn't resolve or complains about health checks, change the `servicePort` to `80` instead of `https`
 
@@ -361,6 +363,8 @@ Wait for it to load and make sure it is running with
 kubectl describe jvb-hpa
 ```
 
+---
+
 If all goes well, deploying the JVB statefulset should have automatically added services exposing each JVB pod. Create a meeting with 3+ people to confirm that it works. If it does, refer to the Jitsi Meet Torture section to loadtest.
 
 Otherwise, here are some common issues and solutions:
@@ -377,8 +381,6 @@ kubectl exec -it POD-NAME -- /bin/bash
 The `printenv` command will list all of the pod's environment variables, of which JVB_PORT is a part of. However, its name will be different depending on the pod. If the 	pod's name is "jvb-0," it will be JVB_0_PORT. You can search for it by entering `printenv JVB_0_PORT`. Something like udp://IP_ADDRESS:PORT_NUMBER should appear. Another useful command is `compgen -A variable | grep "keyword"`, which will display the environment variables related to whatever you substitute for "keyword".
 - Usually errors will appear in the service-per-pod-deployment's container logs. You can access them on the Google Cloud interface, or ssh into the node and navigate to /var/log/containers and look for the `service-per-pod` log (run as root).
 - Make sure the service-per-pod deployment/service and service-per-pod-hooks ConfigMap are in the `metacontroller` namespace. Everything else should be in the `jitsi` namespace
-
----
 
 # Jitsi-Meet-Torture
 
