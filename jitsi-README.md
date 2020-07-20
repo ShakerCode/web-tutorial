@@ -300,6 +300,7 @@ Same web service from Simple Cluster Setup. Make sure to fill in your domain nam
 ```
 kubectl create -f web-service.yaml
 ```
+**IMPORTANT:** This setup was done with an nginx-ingress controller. Refer to the Simple Cluster Setup for the installation process. The nginx-ingress controller may also be replaced with an HAproxy version as well.
 
 ## 3. Jicofo, prosody, web deployment
 ```
@@ -376,3 +377,65 @@ kubectl exec -it POD-NAME -- /bin/bash
 The `printenv` command will list all of the pod's environment variables, of which JVB_PORT is a part of. However, its name will be different depending on the pod. If the 	pod's name is "jvb-0," it will be JVB_0_PORT. You can search for it by entering `printenv JVB_0_PORT`. Something like udp://IP_ADDRESS:PORT_NUMBER should appear. Another useful command is `compgen -A variable | grep "keyword"`, which will display the environment variables related to whatever you substitute for "keyword".
 - Usually errors will appear in the service-per-pod-deployment's container logs. You can access them on the Google Cloud interface, or ssh into the node and navigate to /var/log/containers and look for the `service-per-pod` log (run as root).
 - Make sure the service-per-pod deployment/service and service-per-pod-hooks ConfigMap are in the `metacontroller` namespace. Everything else should be in the `jitsi` namespace
+
+# Jitsi-Meet-Torture
+
+This is a loadtesting setup that uses [Selenium](https://www.selenium.dev/documentation/en/) to check the performance of the conferences by automatically adding/removing fake users to conferences. The setup is done on **Google Chrome**.
+
+**Note:** This part of the README assumes that you have a working Jitsi instance or cluster setup as outline in previous sections.
+
+**Note:** This setup installs Maven through Ubuntu's `apt`. You can install [Maven on Windows](https://mkyong.com/maven/how-to-install-maven-in-windows/) as well. Alternatively, you can activate [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/install-win10) (WSL) and install [Ubuntu](https://ubuntu.com/tutorials/ubuntu-on-windows#1-overview) from the Microsoft Store.
+
+You will also need [https://java.com/en/download/](https://java.com/en/download/) installed. Version 8 should be fine.
+
+Download Selenium Server from https://www.selenium.dev/downloads/
+- At the time of writing, the latest stable version is **3.141.59**
+
+Move the .jar file to a folder of your choice
+
+Open your terminal, navigate to your folder, and run:
+```
+java -jar selenium-server-standalone-3.141.59.jar -role hub
+```
+The last line will show something like: "Clients should connect to http://<ip-address>:4444/wd/hub" Remember this IP address.
+
+Open another terminal window, navigate to your folder, and run:
+```
+java -Dwebdriver.gecko.driver="<path-to-folder>:\geckodriver.exe" -jar selenium-server-standalone-3.141.59.jar -role webdriver -hub http://<ip-address>:4444/grid/register -port 5566
+```
+Change `<path-to-folder>` to your folder's path and `<ip-address>` to the IP you recorded previously.
+
+Check your Chrome version by clicking the three dots in the top right corner -> Help -> About Google Chrome. Remember what version you have (should be 80-84).
+
+Download the Chrome driver from https://sites.google.com/a/chromium.org/chromedriver/downloads
+
+Unzip the folder and move the chromedriver to your folder with the selneium .jar file.
+
+Open another terminal window, navigate to your folder and run:
+```
+java -Dwebdriver.chrome.driver=./chromedriver -jar selenium-server-standalone-3.141.59.jar -role node -maxSession 1 -hub http://<ip-address>:4444/grid/register -browser browserName=chrome,version=80,platform=Linux,maxInstances=1
+```
+
+Install Maven
+```
+sudo apt install maven
+```
+
+If the single comand doesn't work, update your packages first
+```
+sudo apt-get install software-properties-common
+sudo apt-add-repository universe
+sudo apt-get update
+sudo apt-get install maven
+```
+
+Clone the jitsi-meet-torture repository
+```
+git clone https://github.com/jitsi/jitsi-meet-torture
+```
+and navigate to the jitsi-meet-torture folder (should be where you cloned it)
+
+Running the following command will start a couple conferences with fake callers for 2 minutes before closing them. Make sure to change the `--instance-url` option to your domain name. Change the `<ip-address>` to the one from earlier as well.
+```
+./scripts/malleus.sh --conferences=2 --participants=4 --senders=1 --audio-senders=2 --duration=120 --room-name-prefix=hamertesting --hub-url=http://<ip-address>:4444/wd/hub --instance-url=https://jitsi.dylantknguyen.com
+```
