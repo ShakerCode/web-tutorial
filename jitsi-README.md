@@ -116,7 +116,7 @@ After creating a standalone Jitsi instance via the Quick Install guide, it is po
 3. Create a **template** from the image. Change the machine type to match the original instance's and change the boot disk to your custom image.
 4. Create an **instance group** using the template you created.
 
-# Cluster Setup
+# Simple Cluster Setup
 > Based on [Install guide for kubernetes](https://github.com/jitsi/docker-jitsi-meet/tree/master/examples/kubernetes)
 
 **IMPORTANT:** Follow the Google SDK instructions in the main README before continuing. The Kubernetes CLI, `kubectl` will be used multiple times in this guide
@@ -262,3 +262,24 @@ certbot certonly --manual --preferred-challenges dns -d DOMAIN-NAME
 ```
 
 If Certbot still throws errors, refer to the cert-manager process in the README.
+
+# Multi-JVB Setup
+> Used extensively as reference: https://github.com/hpi-schul-cloud/jitsi-deployment
+
+This setup deploys `jicofo`, `prosody`, and `web` in a single pod while JVB pods are deployed using statefulsets. A [metacontroller](https://metacontroller.app/examples/) (specifically the service-per-pod DecoratorController) is used to automatically assign NodePort services to each JVB pod. Startup scripts (ConfigMaps) are needed for this because the port numbers for each service must be different. Additionally, a [HorizontalPodAutoscaler](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) is used to add/delete pods depending on defined metrics.
+
+**Note:** Follow the same cluster settings and first two steps from Simple Cluster Setup.
+
+**Important:** In order for the NodePort service to work, you must enable UDP ports (1-65535) for the cluster in the firewall rules. You also need to listen for a specific range of incoming IPs. Although it's not safe, you can temporarily make a rule to allow all UDP ports and a wide range of IPs (0.0.0.0/0 - 192.168.2.0/24) to test out the setup and change it later
+
+## 1. Deploy the prosody service
+```
+kubectl create -f prosody-service.yaml
+```
+The service is LoadBalancer type, but NodePort might work.
+
+## 2. Deploy the web service
+```
+kubectl create -f web-service.yaml
+
+
