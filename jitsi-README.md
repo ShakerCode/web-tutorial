@@ -268,9 +268,25 @@ If Certbot still throws errors, refer to the cert-manager process in the README.
 
 This setup deploys `jicofo`, `prosody`, and `web` in a single pod while JVB pods are deployed using statefulsets. A [metacontroller](https://metacontroller.app/examples/) (specifically the service-per-pod DecoratorController) is used to automatically assign NodePort services to each JVB pod. Startup scripts (ConfigMaps) are needed for this because the port numbers for each service must be different. Additionally, a [HorizontalPodAutoscaler](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) is used to add/delete pods depending on defined metrics.
 
-**Note:** Follow the same cluster settings and first two steps from Simple Cluster Setup.
+**Note:** Follow the first two steps from Simple Cluster Setup.
 
 **Important:** In order for the NodePort service to work, you must enable UDP ports (1-65535) for the cluster in the firewall rules. You also need to listen for a specific range of incoming IPs. Although it's not safe, you can temporarily make a rule to allow all UDP ports and a wide range of IPs (0.0.0.0/0 - 192.168.2.0/24) to test out the setup and change it later
+
+### Cluster Settings:
+**Note:** These exact settings are not required to set up Jitsi on Kubernetes. However, they have proven to work when following this guide
+
+- Zone: Choose something suitable
+- Version: 1.15.12-gke.6
+- Number of nodes: 1 (The setup only needs 1 node for now. You can enable autoscaling if you wish)
+- Image type/OS: Ubuntu
+- Machine type: n1-standard-2
+- Access scopes (optional): Allow full access to all Cloud APIs
+- Networking: Public cluster, enable HTTP load balancing (if you decide to use GCP's built in ingress controller)
+
+Connect to the cluster using
+```
+gcloud container clusters get-credentials CLUSTER-NAME --zone ZONE --project PROJECT-ID
+```
 
 ## 1. Deploy the prosody service
 ```
@@ -279,7 +295,83 @@ kubectl create -f prosody-service.yaml
 The service is LoadBalancer type, but NodePort might work.
 
 ## 2. Deploy the web service
+
+Same web service from Simple Cluster Setup. Make sure to fill in your domain name and TLS secretfile for the `hosts` field and `tls-secret`, respectively.
 ```
 kubectl create -f web-service.yaml
+```
+
+## 3. Jicofo, prosody, web deployment
+```
+kubectl create -f deployment.yaml
+```
+**Note:** The labels defined in both services and this deployment match so they are paired with one another. The XMPP_SERVER and XMPP_BOSH_URL_BASE fields also use "prosody" as the service name. Make sure the deployment is being exposed by the web service, prosody service, and ingress before moving on.
+
+## 4. Install Metacontroller
+> Refer to https://metacontroller.app/guide/install/
+
+## 5. Add the DecoratorController
+This controller looks for the pods deployed in the JVB statefulset via the `service-per-pod-label` annotation to add services to.
+```
+kubectl create -f service-per-pod-decoratorcontroller.yaml
+```
+
+## 6. Add the ConfigMaps
+
+The entrypoint script is called by the JVB to get a port number that increments by 1 for each additional JVB pod, saving it to the JVB_PORT jitsi field. By default, the starting port is 30300. You can change this value for additional shards to avoid conflicting ports
+```
+kubectl create -f jvb-entrypoint.yaml
+```
+The shutdown script is meant to provide a graceful shutdown for JVB pods if they are being deleted or have been idle for too long. The JVB StatefulSet refers to this ConfigMap whenever it needs to shut down a pod
+```
+kubectl create -f jvb-shutdown.yaml
+```
+The service-per-pod script uses the DecoratorController from the previous step to add a NodePort service to each incoming JVB pod with the same port as defined in the entrypoint script. The `baseport` local variable is defined to be the default port 30300, so you must change this if you changed the BASE_PORT field in the entrypoint script.
+
+```
+kubectl create -f service-per-pod-hooks.yaml
+```
+
+**Note:** The setup created by [schul.cloud](https://github.com/hpi-schul-cloud/jitsi-deployment) was able to retrieve the JVB_PORT using two loops. However, it threw errors when we used it. The alternative, which is to maually define the `baseport` variable to match the JVB_PORT, works just as well. The only problem is that a new ConfigMap with a different `baseport` value is needed for each additional shard. The BASE_PORT in the entrypoint script must also be changed too.
+
+## 7. Deploy and expose service-per-pod
+
+A deployment is needed to detect incoming JVBs
+```
+kubectl create -f service-per-pod-deployment.yaml
+```
+**Note:** The service included in this file is of type LoadBalancer. NodePort would likely work as well.
 
 
+## 8. Deploy the JVB StatefulSet
+This version has been truncated and doesn't include the prometheus-exporter. Refer schul.cloud's setup's to see the unmodified StatefulSet
+You can change the intial number of JVBs by changing the `replicas` field
+```
+kubectl create -f jvb-statefulset
+```
+
+## 9. Create the HorizontalPodAutoscaler
+The default setup uses CPU and memory as the primary scaling metrics. (The resources in the JVB StatefulSet are set as such). However, The cluster's API version supports `autoscaling/v2beta2` which allows for new metrics
+```
+kubectl create -f jvb-hpa.yaml
+```
+Wait for it to load and make sure it is running with
+```
+kubectl describe jvb-hpa
+```
+
+If all goes well, deploying the JVB statefulset should have automatically added services exposing each JVB pod. Create a meeting with 3+ people to confirm that it works. If it does, refer to the Jitsi Meet Torture section to loadtest.
+
+Otherwise, here are some common issues and solutions:
+
+- If you change the service-per-pod-hooks ConfigMap at all, sometimes the service-per-pod deployment doesn't seem to register it. In this case, just delete the deployment and its service, add the new ConfigMap, and re-deploy the deployment/service.
+- Make sure your pods and deployments are actually being exposed by their services. You can check by clicking into the pods/deployments and looking under "Exposing Services." If the section doesn't show anything, make sure your labels between pod/deployment and service match. As a quick reference...
+	- Your "jitsi" deployment (with jicofo/prosody/web) should be exposed by the prosody, web, and ingress services. 
+	- The jvb pods should be exposed by individual NodePort services.
+	- The service-per-pod-deployment should be exposed by its corresponding service
+- You can check the JVB port by creating a shell for your pod with
+```
+kubectl exec -it POD-NAME -- /bin/bash
+```
+The `printenv` command will list all of the pod's environment variables, of which JVB_PORT is a part of. However, its name will be different depending on the pod. If the 	pod's name is "jvb-0," it will be JVB_0_PORT. You can search for it by entering `printenv JVB_0_PORT`. Something like udp://IP_ADDRESS:PORT_NUMBER should appear. Another useful command is `compgen -A variable | grep "keyword"`, which will display the environment variables related to whatever you substitute for "keyword".
+- Usually errors will appear in the service-per-pod-deployment's container logs. You can access them on the Google Cloud interface, or ssh into the node and navigate to /var/log/containers and look for the `service-per-pod` log (run as root).
