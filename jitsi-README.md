@@ -390,7 +390,7 @@ This is a loadtesting setup that uses [Selenium](https://www.selenium.dev/docume
 
 **Note:** This setup installs Maven through Ubuntu's `apt`. You can install [Maven on Windows](https://mkyong.com/maven/how-to-install-maven-in-windows/) as well. Alternatively, you can activate [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/install-win10) (WSL) and install [Ubuntu](https://ubuntu.com/tutorials/ubuntu-on-windows#1-overview) from the Microsoft Store.
 
-You will also need [https://java.com/en/download/](https://java.com/en/download/) installed. Version 8 should be fine.
+You will also need [Java](https://java.com/en/download/) installed. Version 8 should be fine.
 
 Download Selenium Server from https://www.selenium.dev/downloads/
 - At the time of writing, the latest stable version is **3.141.59**
