@@ -380,7 +380,7 @@ The `printenv` command will list all of the pod's environment variables, of whic
 
 # Jitsi-Meet-Torture
 
-This is a loadtesting setup that uses [Selenium](https://www.selenium.dev/documentation/en/) to check the performance of the conferences by automatically adding/removing fake users to conferences. The setup is done on **Google Chrome**.
+This is a loadtesting setup that uses [Selenium](https://www.selenium.dev/documentation/en/) to check the performance of conferences by automatically adding/removing fake users to conferences. The setup is done on **Google Chrome**.
 
 **Note:** This part of the README assumes that you have a working Jitsi instance or cluster setup as outline in previous sections.
 
