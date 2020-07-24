@@ -443,3 +443,41 @@ Running the following command will start a couple conferences with fake callers 
 ```
 ./scripts/malleus.sh --conferences=2 --participants=4 --senders=1 --audio-senders=2 --duration=120 --room-name-prefix=hamertesting --hub-url=http://<ip-address>:4444/wd/hub --instance-url=https://jitsi.dylantknguyen.com
 ```
+# Jitsi Localhost
+> Jitsi's Developer Guide: https://jitsi.github.io/handbook/docs/dev-guide/dev-guide-web
+
+You can use a localhost environment to test out changes with the jitsi code (from the [jitsi/jitsi-meet](https://github.com/jitsi/jitsi-meet) repo).
+
+**Important:** This localhost setup is only suitable for a linux environment. If you're on Windows, refer to the Jitsi-Meet-Torture section and download WSL to use the Ubuntu terminal.
+
+**Note:** In `webpack.config.js`, there is a function called `devServerProxyBypass` that has a conditional statement checking for directory paths. In order to use local files that you are editing, the file must be under the specified directories. They are: `css`, `doc`, `fonts`, `images`, `lang`, `sounds`, `static`, `libs`. (And those that end in `.wasm`).
+
+**Important:** Make sure you're **NOT** root when performing these commands (unless `sudo` is present).
+
+```
+sudo apt-get install npm nodejs
+git clone https://github.com/jitsi/jitsi-meet.git
+```
+Make sure your Node version is 12+ and npm version is 6+. Check with `node -v` and `npm version`. (Node v10.19.0 seems to work fine actually).
+
+The git version used at time of writing was v2.25.1.
+
+```
+cd /path/to/jitsi-meet
+npm install
+git clone https://github.com/jitsi/jitsi-meet.git
+
+make
+```
+
+To launch localhost, type
+```
+make dev
+```
+After the code has been compiled and the messages stop, your site should be at https://localhost:8080
+
+**Note:** VS Code has a WSL extension that allows you to easily edit the jitsi code.
+
+Whenever you make changes to your code, run `make dev` to start up the localhost.
+
+
