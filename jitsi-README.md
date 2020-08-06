@@ -270,7 +270,7 @@ If Certbot still throws errors, refer to the cert-manager process in the README.
 
 This setup deploys `jicofo`, `prosody`, and `web` in a single pod while JVB pods are deployed using statefulsets. A [metacontroller](https://metacontroller.app/examples/) (specifically the service-per-pod DecoratorController) is used to automatically assign NodePort services to each JVB pod. Startup scripts (ConfigMaps) are needed for this because the port numbers for each service must be different. Additionally, a [HorizontalPodAutoscaler](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) is used to add/delete pods depending on defined metrics.
 
-# Things to Note
+### Things to Note
 
 - This setup will create a single "shard," or a bundle of the necessary Jitsi components: jicofo, prosody, web frontend, and multiple JVBs. In order to create more shards, you will need to follow the same steps, but also change the names of each deployment/service. Ideally, you should name your components according to what shard they belong to (e.g: shard-0-jvb, shard-0-jitsi, etc.). As of now, the setup **DOES NOT** automatically create shards. To set that up, you may want to use [kustomize](https://github.com/kubernetes-sigs/kustomize) as a means of organizing your yaml files to be deployed at once.
 - The example ConfigMap used to assign services to each JVB is hard-coded to use port 30300 (see the bottom of step 6 for more info). It will increment the port by 1 for each additional JVB pod. When setting up a new shard you need to create new copies of the `jvb-entrypoint` and `service-per-pod-hooks` ConfigMaps and change the `BASE_PORT` and `baseport` variables to a new port (same value of course).
