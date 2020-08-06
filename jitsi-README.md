@@ -270,6 +270,11 @@ If Certbot still throws errors, refer to the cert-manager process in the README.
 
 This setup deploys `jicofo`, `prosody`, and `web` in a single pod while JVB pods are deployed using statefulsets. A [metacontroller](https://metacontroller.app/examples/) (specifically the service-per-pod DecoratorController) is used to automatically assign NodePort services to each JVB pod. Startup scripts (ConfigMaps) are needed for this because the port numbers for each service must be different. Additionally, a [HorizontalPodAutoscaler](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) is used to add/delete pods depending on defined metrics.
 
+# Things to Note
+
+- This setup will create a single "shard," or a bundle of the necessary Jitsi components: jicofo, prosody, web frontend, and multiple JVBs. In order to create more shards, you will need to follow the same steps, but also change the names of each deployment/service. Ideally, you should name your components according to what shard they belong to (e.g: shard-0-jvb, shard-0-jitsi, etc.). As of now, the setup **DOES NOT** automatically create shards. To set that up, you may want to use [kustomize](https://github.com/kubernetes-sigs/kustomize) as a means of organizing your yaml files to be deployed at once.
+- The example ConfigMap used to assign services to each JVB is hard-coded to use port 30300 (see the bottom of step 6 for more info). It will increment the port by 1 for each additional JVB pod. When setting up a new shard you need to create new copies of the `jvb-entrypoint` and `service-per-pod-hooks` ConfigMaps and change the `BASE_PORT` and `baseport` variables to a new port (same value of course).
+
 **Note:** Follow the first two steps from Simple Cluster Setup.
 
 **Important:** In order for the NodePort service to work, you must enable UDP ports (1-65535) for the cluster in the firewall rules. You also need to listen for a specific range of incoming IPs. Although it's not safe, you can temporarily make a rule to allow all UDP ports and a wide range of IPs (0.0.0.0/0 - 192.168.2.0/24) to test out the setup and change it later
@@ -332,7 +337,7 @@ kubectl create -f jvb-shutdown.yaml
 The service-per-pod script uses the DecoratorController from the previous step to add a NodePort service to each incoming JVB pod with the same port as defined in the entrypoint script. The `baseport` local variable is defined to be the default port 30300, so you must change this if you changed the BASE_PORT field in the entrypoint script.
 
 ```
-kubectl create -f service-per-pod-hooks.yaml
+kubectl create -f service-per-pod-configmap.yaml
 ```
 
 **Note:** The setup created by [schul.cloud](https://github.com/hpi-schul-cloud/jitsi-deployment) was able to retrieve the JVB_PORT using two loops. However, it threw errors when we used it. The alternative, which is to maually define the `baseport` variable to match the JVB_PORT, works just as well. The only problem is that a new ConfigMap with a different `baseport` value is needed for each additional shard. The BASE_PORT in the entrypoint script must also be changed too.
