@@ -257,7 +257,9 @@ sudo apt-get install certbot
 ```
 Make sure the domain name you're using is actually registered and has an A record for the ingress-controller's IP (Not the JVB UDP service's IP)
 
-By default Certbot will use the http-01-challenge. If it throws an error (especially the ./well-known/acme challenge one), then you can use a DNS challenge instead. Run the following command and create a TXT record for your DNS. Copy in the output string from the challenge into the record and wait a bit for it to register before moving on. 
+By default Certbot will use the http-01-challenge. If it throws an error (especially the ./well-known/acme challenge one), then you can use a DNS challenge instead. Run the following command and create a TXT record for your DNS. Make sure to add the `_acme-challenges` prefix before your subdomain when making the record (ex: \_acme.challenges.jitsi.mirrormirror.app). Copy in the output string from the challenge into the record and wait a bit for it to register before moving on.
+
+**Note:** You may have to wait 2-5 minutes for the record to register, so be patient. It depends on your domain registrar.
 
 ```
 certbot certonly --manual --preferred-challenges dns -d DOMAIN-NAME
