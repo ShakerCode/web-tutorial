@@ -472,7 +472,6 @@ The git version used at time of writing was v2.25.1.
 ```
 cd /path/to/jitsi-meet
 npm install
-git clone https://github.com/jitsi/jitsi-meet.git
 
 make
 ```
